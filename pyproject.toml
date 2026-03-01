@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "prestashop-mcp"
-version = "3.0.0"
-description = "Professional Model Context Protocol server for complete PrestaShop e-commerce management with extended functionality: modules, cache, themes, and navigation"
+version = "4.0.0"
+description = "Professional Model Context Protocol server for complete PrestaShop e-commerce management with extended functionality: modules, cache, themes, and navigation. Supports both stdio and SSE transports."
 readme = "README.md"
 requires-python = ">=3.8"
 authors = [
@@ -40,6 +40,8 @@ dependencies = [
     "click>=8.1.0",
     "python-dotenv>=1.0.0",
     "typing-extensions>=4.8.0",
+    "starlette>=0.27.0",
+    "uvicorn>=0.23.0",
 ]
 
 [project.urls]
