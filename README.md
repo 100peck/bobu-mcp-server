@@ -1,452 +1,249 @@
-
-
 # PrestaShop MCP Server
 
-A professional Model Context Protocol (MCP) Server for complete management of PrestaShop e-commerce stores with **extended functionality**.
+A TypeScript/Node.js [Model Context Protocol](https://modelcontextprotocol.io/) server for managing PrestaShop e-commerce stores. Deployed as a serverless function on **Vercel**.
 
-## 🚀 Overview
+---
 
-This MCP Server enables complete management of your PrestaShop store through AI applications like Claude Desktop. With specialized tools, you can manage all aspects of your e-commerce business - from products and categories to customers, orders, **modules, cache, themes, and navigation menus**.
+## Overview
 
-## ✨ Features
+This server exposes 32 MCP tools that let AI assistants (Claude, etc.) manage every major area of a PrestaShop store — products, categories, customers, orders, modules, navigation menus, cache, and themes — through natural language.
 
-- **🛍️ Complete Store Management** - Tools for all e-commerce areas
-- **🔧 Module Management** - Install, activate, deactivate modules
-- **💾 Cache Management** - Clear and monitor cache status
-- **🎨 Theme Management** - Configure themes and settings
-- **📋 Menu Management** - Manage main navigation (ps_mainmenu)
-- **🏗️ MCP Protocol Compliance** for seamless AI integration
-- **⚡ Async/Await Architecture** for maximum performance
-- **🛡️ Comprehensive Error Handling** and validation
-- **🔧 Production-Ready** with complete test suite
-- **📖 Comprehensive Documentation** with practical examples
+**Transport:** [MCP Streamable HTTP](https://modelcontextprotocol.io/docs/concepts/transports) — stateless, request/response based, ideal for serverless deployments.
 
-## 🛠️ Available Tools
+---
 
-### 📦 Unified Product Management
-- `get_products` - **UNIFIED** Product retrieval supporting all use cases:
-  - **Single Product by ID**: Complete product details including stock and category info
-  - **Multiple Products**: List with optional filtering and enhancement
-  - **Flexible Enhancement**: Optional stock info, category details, custom field selection
-  - **Smart Filtering**: By category, name, or custom criteria
-- `create_product` - Create new products with complete configuration
-- `update_product` - Edit product information
-- `delete_product` - Remove products
-- `update_product_stock` - Manage inventory levels
-- `update_product_price` - Update pricing
+## Quick Start
 
-### 🏷️ Category Management
-- `get_categories` - Retrieve categories (with hierarchy filter)
-- `create_category` - Create new categories
-- `update_category` - Edit categories
-- `delete_category` - Remove categories
+### 1. Prerequisites
 
-### 👥 Customer Management
-- `get_customers` - Retrieve and filter customers
-- `create_customer` - Create new customers
-- `update_customer` - Edit customer data
+- Node.js 18+
+- A PrestaShop store with the Webservice API enabled
+- A Vercel account (Hobby plan is sufficient)
 
-### 📋 Order Management
-- `get_orders` - Retrieve and filter orders
-- `update_order_status` - Change order status
-- `get_order_states` - Retrieve available statuses
-
-### 🔧 Module Management **NEW**
-- `get_modules` - List all PrestaShop modules
-- `get_module_by_name` - Get specific module details
-- `install_module` - Install new modules
-- `update_module_status` - Activate/deactivate modules
-
-### 📋 Main Menu Management **NEW**
-- `get_main_menu_links` - Retrieve ps_mainmenu navigation links
-- `update_main_menu_link` - Edit existing menu links
-- `add_main_menu_link` - Add new navigation links
-
-### 💾 Cache Management **NEW**
-- `clear_cache` - Clear PrestaShop cache (all types)
-- `get_cache_status` - Monitor cache configuration
-
-### 🎨 Theme Management **NEW**
-- `get_themes` - Get current theme information
-- `update_theme_setting` - Configure theme settings
-
-### ⚙️ Store Administration
-- `test_connection` - Test API connection
-- `get_shop_info` - Comprehensive store statistics
-
-## 📋 Installation
-
-### ⚠️ Recommended Installation (Virtual Environment)
-
-**This approach prevents module conflicts and ensures reliable installation:**
-
-#### Windows:
-```powershell
-# Clone repository
-git clone https://github.com/latinogino/prestashop-mcp.git
-cd prestashop-mcp
-
-# Create virtual environment
-python -m venv venv_prestashop
-
-# Activate virtual environment
-.\venv_prestashop\Scripts\Activate.ps1
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install package in development mode
-pip install -e .
-
-# Verify installation
-python -c "import prestashop_mcp; print('✅ Installation successful')"
-
-# Note the Python path for Claude Desktop configuration
-Write-Host "Python Path: $((Get-Command python).Source)"
-```
-
-#### Linux/macOS:
-```bash
-# Clone repository
-git clone https://github.com/latinogino/prestashop-mcp.git
-cd prestashop-mcp
-
-# Create virtual environment
-python3 -m venv venv_prestashop
-
-# Activate virtual environment
-source venv_prestashop/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install package in development mode
-pip install -e .
-
-# Verify installation
-python -c "import prestashop_mcp; print('✅ Installation successful')"
-
-# Note the Python path for Claude Desktop configuration
-which python
-```
-
-### ⚙️ Configuration
-
-Create a `.env` file based on `.env.example`:
+### 2. Clone & Install
 
 ```bash
-# PrestaShop Configuration
+git clone https://github.com/100peck/bobu-mcp-server.git
+cd bobu-mcp-server
+npm install
+```
+
+### 3. Configure Environment Variables
+
+Copy `.env.example` to `.env` and fill in your values:
+
+```bash
+cp .env.example .env
+```
+
+```env
 PRESTASHOP_SHOP_URL=https://your-shop.example.com
-PRESTASHOP_API_KEY=YOUR_API_KEY
-
-# Logging
-LOG_LEVEL=INFO
+PRESTASHOP_API_KEY=your-prestashop-api-key
+MCP_API_KEY=your-secret-bearer-token
 ```
 
-## 🎯 Usage
+| Variable | Description |
+|----------|-------------|
+| `PRESTASHOP_SHOP_URL` | Your store's root URL (no trailing slash) |
+| `PRESTASHOP_API_KEY` | PrestaShop Webservice API key |
+| `MCP_API_KEY` | Bearer token that protects the `/api/mcp` endpoint |
 
-### 🤖 With Claude Desktop
+### 4. Run Locally
 
-#### Using Virtual Environment (Recommended)
+```bash
+npx vercel dev
+```
 
-Add this configuration to `claude_desktop_config.json`:
+Test the endpoints:
 
-**Windows:**
+```bash
+# Health check (no auth required)
+curl http://localhost:3000/api/health
+
+# MCP endpoint
+curl -X POST http://localhost:3000/api/mcp \
+  -H "Authorization: Bearer your-secret-bearer-token" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+### 5. Deploy to Vercel
+
+```bash
+npx vercel --prod
+```
+
+Set the three environment variables in the Vercel project dashboard (Settings → Environment Variables).
+
+---
+
+## Connecting to Claude Desktop
+
+Add the following to your `claude_desktop_config.json`:
+
 ```json
 {
   "mcpServers": {
     "prestashop": {
-      "command": "C:\\\\path\\\\to\\\\prestashop-mcp\\\\venv_prestashop\\\\Scripts\\\\python.exe",
-      "args": ["-m", "prestashop_mcp.prestashop_mcp_server"],
-      "cwd": "C:\\\\path\\\\to\\\\prestashop-mcp",
-      "env": {
-        "PRESTASHOP_SHOP_URL": "https://your-shop.example.com",
-        "PRESTASHOP_API_KEY": "YOUR_API_KEY"
+      "type": "http",
+      "url": "https://your-project.vercel.app/api/mcp",
+      "headers": {
+        "Authorization": "Bearer your-secret-bearer-token"
       }
     }
   }
 }
 ```
 
-**Linux/macOS:**
-```json
-{
-  "mcpServers": {
-    "prestashop": {
-      "command": "/path/to/prestashop-mcp/venv_prestashop/bin/python",
-      "args": ["-m", "prestashop_mcp.prestashop_mcp_server"],
-      "cwd": "/path/to/prestashop-mcp",
-      "env": {
-        "PRESTASHOP_SHOP_URL": "https://your-shop.example.com",
-        "PRESTASHOP_API_KEY": "YOUR_API_KEY"
-      }
-    }
-  }
-}
-```
+**Config file locations:**
+- macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Windows: `%APPDATA%\Claude\claude_desktop_config.json`
 
-### 💻 CLI Usage
+---
 
-```bash
-# Activate virtual environment first (if using venv)
-source venv_prestashop/bin/activate  # Linux/macOS
-.\venv_prestashop\Scripts\Activate.ps1  # Windows
+## Available Tools (32 total)
 
-# With environment variables
-prestashop-mcp
+### Connection & Info
+| Tool | Description |
+|------|-------------|
+| `test_connection` | Test PrestaShop API connectivity |
+| `get_shop_info` | Shop statistics (product/customer/order counts) |
 
-# With direct parameters
-prestashop-mcp --shop-url https://your-shop.com --api-key YOUR_API_KEY
+### Products (6)
+| Tool | Description |
+|------|-------------|
+| `get_products` | List or retrieve single product; optional stock/category enrichment |
+| `create_product` | Create a product with stock, price, description |
+| `update_product` | Update name, price, description, category, status |
+| `delete_product` | Delete a product |
+| `update_product_stock` | Set stock quantity |
+| `update_product_price` | Update price (and optionally wholesale price) |
 
-# Debug mode
-prestashop-mcp --log-level DEBUG
-```
+### Categories (4)
+| Tool | Description |
+|------|-------------|
+| `get_categories` | List categories, filter by parent |
+| `create_category` | Create a category with multilingual fields |
+| `update_category` | Update name, description, status |
+| `delete_category` | Delete a category |
 
-## 🆕 Extended Functionality Examples
+### Customers (3)
+| Tool | Description |
+|------|-------------|
+| `get_customers` | List customers, filter by email |
+| `create_customer` | Create a customer account |
+| `update_customer` | Update email, name, status |
 
-### **Module Management**
-```
-"Show me all modules in my PrestaShop store"
-"Activate the ps_mainmenu module"
-"Deactivate the blockcart module"
-"Get details for the ps_featuredproducts module"
-```
+### Orders (3)
+| Tool | Description |
+|------|-------------|
+| `get_orders` | List orders, filter by customer or status |
+| `update_order_status` | Change order state |
+| `get_order_states` | List available order states |
 
-### **Main Menu Management**
-```
-"Show me all main menu links"
-"Add a new menu link called 'Special Offers' pointing to /special-offers"
-"Update menu link 3 to point to /new-products"
-"Make menu link 5 inactive"
-```
+### Modules (4)
+| Tool | Description |
+|------|-------------|
+| `get_modules` | List modules |
+| `get_module_by_name` | Get a module by its technical name |
+| `install_module` | Install a module |
+| `update_module_status` | Activate or deactivate a module |
 
-### **Cache Management**
-```
-"Clear all PrestaShop cache"
-"Show me the current cache status"
-"Check if CSS cache is enabled"
-```
+### Navigation Menu (8)
+| Tool | Description |
+|------|-------------|
+| `get_main_menu_links` | Get `ps_mainmenu` custom links |
+| `add_main_menu_link` | Add a custom link to the menu |
+| `update_main_menu_link` | Edit a custom menu link |
+| `get_menu_tree` | Get `PS_MENU_TREE` — categories shown in nav |
+| `add_category_to_menu` | Add a category to the navigation tree |
+| `remove_category_from_menu` | Remove a category from navigation |
+| `update_menu_tree` | Replace the full category order in navigation |
+| `get_menu_tree_status` | Get combined menu status (links + tree) |
 
-### **Theme Management**
-```
-"Show me current theme settings"
-"Update the PS_LOGO setting to /img/new-logo.png"
-"Change the PS_THEME_NAME to my-custom-theme"
-```
+### Cache (2)
+| Tool | Description |
+|------|-------------|
+| `clear_cache` | Clear all PrestaShop cache types |
+| `get_cache_status` | Check enabled/disabled status per cache type |
 
-## 🆕 Unified Product API
+### Themes (2)
+| Tool | Description |
+|------|-------------|
+| `get_themes` | Get current theme name, folder, logo settings |
+| `update_theme_setting` | Update any theme-related configuration key |
 
-The `get_products` tool handles **all product retrieval scenarios** with a single, powerful interface:
+---
 
-### **Use Cases:**
-
-| Scenario | Parameters | Result |
-|----------|------------|--------|
-| **Single Product Details** | `product_id="15", include_stock=true, include_category_info=true` | Complete product info with stock & category |
-| **Product List** | `limit=20, category_id="5"` | List of products in category 5 |
-| **Enhanced List** | `limit=10, include_details=true, include_stock=true` | Full product details with stock for 10 products |
-| **Filtered Search** | `name_filter="laptop", include_details=true` | All laptop products with complete information |
-| **Custom Fields** | `display="id,name,price", limit=50` | Specific fields only for 50 products |
-
-## 🛠️ Advanced Features
-
-### **ps_mainmenu Integration**
-The ps_mainmenu module management allows you to:
-- Retrieve all main navigation links
-- Add custom navigation items
-- Update existing menu links (name, URL, status)
-- Control menu link positioning
-
-### **Cache Performance Optimization**
-Cache management includes:
-- Clear all cache types (CSS, JS, Template, General)
-- Monitor cache status for performance optimization
-- Toggle cache settings for development/production
-
-### **Module Lifecycle Management**
-Complete module control:
-- List all installed modules with status
-- Install new modules programmatically
-- Activate/deactivate modules as needed
-- Get detailed module information
-
-### **Theme Customization**
-Theme management capabilities:
-- View current theme configuration
-- Update theme-specific settings
-- Manage logos and visual elements
-- Configure theme-related PrestaShop settings
-
-## 🔧 Troubleshooting
-
-### ❌ Common Issues
-
-#### "ModuleNotFoundError: No module named 'prestashop_mcp'"
-
-**Solution:** Use virtual environment and ensure package is installed:
-```bash
-# Check if in virtual environment
-python -c "import sys; print(sys.prefix)"
-
-# Reinstall package
-pip install -e .
-
-# Verify installation
-python -c "import prestashop_mcp; print('Module found')"
-```
-
-#### Module Management Issues
-
-**Check Module Permissions:**
-```bash
-# Ensure your API key has module management permissions
-curl -u "YOUR_API_KEY:" https://your-shop.com/api/modules?output_format=JSON
-```
-
-#### Cache Clear Not Working
-
-**Alternative Cache Clear:**
-If the API-based cache clear doesn't work, you may need to:
-1. Check PrestaShop permissions for API user
-2. Use manual cache clearing in PrestaShop admin
-3. Verify cache directory write permissions
-
-### 🔍 Debug Mode
-
-Enable debug logging in Claude Desktop configuration:
-```json
-{
-  "mcpServers": {
-    "prestashop": {
-      "command": "path/to/python",
-      "args": ["-m", "prestashop_mcp.prestashop_mcp_server"],
-      "cwd": "path/to/prestashop-mcp",
-      "env": {
-        "PRESTASHOP_SHOP_URL": "https://your-shop.example.com",
-        "PRESTASHOP_API_KEY": "YOUR_API_KEY",
-        "LOG_LEVEL": "DEBUG"
-      }
-    }
-  }
-}
-```
-
-## 📊 Project Structure
+## Project Structure
 
 ```
-prestashop-mcp/
-├── src/prestashop_mcp/                  # Main Package
-│   ├── prestashop_mcp_server.py         # MCP Server (Extended)
-│   ├── prestashop_client.py             # PrestaShop API Client (Extended)
-│   ├── config.py                        # Configuration Management
-│   └── cli.py                          # Command Line Interface
-├── tests/                               # All Tests
-│   ├── test_config.py                   # Unit Tests
-│   └── test_crud_operations.py          # CRUD Integration Tests
-├── venv_prestashop/                     # Virtual Environment (after setup)
-├── README.md                            # Documentation
-├── CHANGELOG.md                         # Version History
-├── pyproject.toml                       # Package Configuration
-└── requirements.txt                     # All Dependencies
-```
-
-## 📖 API Documentation
-
-### PrestaShop API
-
-Complete PrestaShop API documentation:
-- **[PrestaShop DevDocs - Webservice](https://devdocs.prestashop-project.org/8/webservice/)**
-
-### Authentication
-
-```bash
-curl -u "API_KEY:" https://your-shop.com/api/configurations?output_format=JSON
-```
-
-### Important Endpoints
-
-- **Products**: `/api/products`
-- **Categories**: `/api/categories`
-- **Customers**: `/api/customers`
-- **Orders**: `/api/orders`
-- **Stock**: `/api/stock_availables`
-- **Order Status**: `/api/order_states`
-- **Modules**: `/api/modules` **NEW**
-- **Configurations**: `/api/configurations` **NEW**
-
-## 🧪 Development
-
-### 🏗️ Development Environment
-
-```bash
-# Activate virtual environment
-source venv_prestashop/bin/activate  # Linux/macOS
-.\venv_prestashop\Scripts\Activate.ps1  # Windows
-
-# All dependencies (including test dependencies) are in requirements.txt
-pip install -r requirements.txt
-
-# Run tests
-pytest
-
-# Run tests with coverage
-pytest --cov=src/prestashop_mcp --cov-report=html
-
-# Run comprehensive integration tests
-python tests/test_crud_operations.py
-```
-
-## 📖 Resources
-
-- **[PrestaShop Official Documentation](https://devdocs.prestashop-project.org/)**
-- **[Model Context Protocol Specification](https://modelcontextprotocol.io/)**
-- **[Claude Desktop MCP Integration](https://docs.anthropic.com/)**
-- **[GitHub Repository](https://github.com/latinogino/prestashop-mcp)**
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 📝 Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
-
-## 🏗️ Project Status & Development Notes
-
-### 📋 **Maintenance Status**
-
-**⚠️ Limited Maintenance**: I currently do not plan to actively maintain this repository. The PrestaShop MCP Server was rather a test of how an MCP server can be created without significant own programming experience and largely based on LLMs and MCPs.
-
-### 🧪 **Experimental Nature**
-
-This project served as a **Proof of Concept** for:
-- **LLM-Assisted Development**: Development of complex software integration solutions with minimal manual programming
-- **MCP Server Architecture**: Practical implementation of the Model Context Protocol specification
-- **AI-Driven E-Commerce Integration**: Automated PrestaShop management through natural language
-- **No-Code/Low-Code Approach**: Maximum use of AI tools for professional software development
-
-### 🐳 **Planned Docker Distribution**
-
-**Upcoming Features:**
-It is still planned to provide the entire MCP server as a **ready-made Docker container** as soon as all functions are implemented as desired.
-
-**Benefits of Docker deployment:**
-- ✅ **Zero-Configuration Setup**: Easy installation without complex Python environment
-- ✅ **Consistent Environment**: Identical behavior on all platforms
-- ✅ **Isolated Dependencies**: No conflicts with local Python installations
-- ✅ **Production-Ready**: Optimized for productive use
-- ✅ **Auto-Updates**: Easy update to new versions
-
-**Planned Docker usage:**
-```bash
-# Future Docker installation (planned)
-docker pull latinogino/prestashop-mcp:latest
-docker run -e PRESTASHOP_SHOP_URL=https://your-shop.com \
-           -e PRESTASHOP_API_KEY=your-key \
-           -p 8080:8080 \
-           latinogino/prestashop-mcp:latest
+/
+├── api/
+│   ├── mcp.ts          ← MCP endpoint (Streamable HTTP, bearer auth)
+│   └── health.ts       ← Health check (no auth)
+├── src/
+│   ├── config.ts       ← Environment variable loading & validation
+│   ├── prestashop-client.ts  ← PrestaShop REST API client
+│   └── tools/
+│       ├── index.ts    ← Tool registration aggregator
+│       ├── products.ts
+│       ├── categories.ts
+│       ├── customers.ts
+│       ├── orders.ts
+│       ├── modules.ts
+│       ├── menu.ts
+│       ├── cache.ts
+│       ├── themes.ts
+│       └── info.ts
+├── package.json
+├── tsconfig.json
+├── vercel.json
+└── .env.example
 ```
 
 ---
 
-**🎯 Manage your complete PrestaShop store including modules, cache, themes, and navigation through natural language with Claude Desktop!**
+## Architecture Notes
+
+### Why Streamable HTTP?
+
+Vercel Hobby has a **10-second timeout** for serverless functions. Traditional SSE transport requires a long-lived connection and is not suitable. MCP Streamable HTTP works as a standard request/response — each tool call is a single HTTP round-trip that completes well within the timeout.
+
+### Stateless Design
+
+Each request to `/api/mcp` creates a fresh `McpServer` instance with a stateless transport (`sessionIdGenerator: undefined`). No in-memory session state is maintained between requests, which is the correct model for serverless.
+
+### PrestaShop API Client
+
+- Uses native `fetch` (Node.js 18+)
+- **Authentication:** `Authorization: Basic {base64(API_KEY + ":")}`
+- **Read operations:** `GET` with `?output_format=JSON`
+- **Write operations:** `POST`/`PUT` with XML body generated by `xmlbuilder2`
+- **Multilingual fields** are correctly serialized as `<language id="1">value</language>`
+
+---
+
+## PrestaShop Webservice Setup
+
+1. In PrestaShop admin, go to **Advanced Parameters → Webservice**
+2. Enable the Webservice
+3. Create an API key with permissions for: `products`, `categories`, `customers`, `orders`, `order_histories`, `order_states`, `stock_availables`, `modules`, `configurations`
+
+---
+
+## Development
+
+```bash
+# Type check
+npm run typecheck
+
+# Local dev server
+npm run dev
+```
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
