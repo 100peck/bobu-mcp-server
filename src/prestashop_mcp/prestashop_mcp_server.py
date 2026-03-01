@@ -11,6 +11,12 @@ from mcp.server import NotificationOptions, Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool, TextContent
 
+# Import SSE components for HTTP transport
+from mcp.server.sse import SseServerTransport
+from starlette.applications import Starlette
+from starlette.routing import Route
+from starlette.responses import JSONResponse
+
 # Import our PrestaShop components
 from .config import Config
 from .prestashop_client import PrestaShopClient, PrestaShopAPIError
@@ -697,6 +703,28 @@ async def handle_call_tool(name: str, arguments: dict):
         return [TextContent(type="text", text=json.dumps(error_result, indent=2))]
 
 
+async def health_check(request):
+    """Health check endpoint for SSE mode."""
+    return JSONResponse({"status": "ok"})
+
+
+async def handle_sse(request):
+    """Handle SSE connections."""
+    async with SseServerTransport("/messages") as transport:
+        await server.run(
+            transport.read_stream,
+            transport.write_stream,
+            InitializationOptions(
+                server_name="prestashop-mcp",
+                server_version="4.0.0",
+                capabilities=server.get_capabilities(
+                    notification_options=NotificationOptions(),
+                    experimental_capabilities={},
+                ),
+            ),
+        )
+
+
 async def main():
     """Run the PrestaShop MCP server."""
     # Quick API test using the proper client
@@ -714,24 +742,47 @@ async def main():
     except Exception as e:
         print(f"❌ API test error: {e}", file=sys.stderr)
         return
-    
-    # Run server
-    print("🚀 Starting Enhanced PrestaShop MCP server...", file=sys.stderr)
-    print("✅ Server ready with full CRUD operations + Navigation Tree management", file=sys.stderr)
-    
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="prestashop-mcp",
-                server_version="4.0.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                ),
-            ),
+
+    # Check transport mode
+    transport_mode = os.getenv("MCP_TRANSPORT", "stdio").lower()
+
+    if transport_mode == "sse":
+        # SSE mode - run HTTP server
+        port = int(os.getenv("PORT", "8000"))
+        print(f"🚀 Starting Enhanced PrestaShop MCP server in SSE mode on port {port}...", file=sys.stderr)
+        print("✅ Server ready with full CRUD operations + Navigation Tree management", file=sys.stderr)
+        print(f"📡 SSE endpoint: http://localhost:{port}/sse", file=sys.stderr)
+        print(f"💚 Health check: http://localhost:{port}/health", file=sys.stderr)
+
+        # Create Starlette app with routes
+        app = Starlette(
+            routes=[
+                Route("/health", health_check),
+                Route("/sse", handle_sse),
+            ]
         )
+
+        # Run with uvicorn
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    else:
+        # stdio mode - default for local use
+        print("🚀 Starting Enhanced PrestaShop MCP server in stdio mode...", file=sys.stderr)
+        print("✅ Server ready with full CRUD operations + Navigation Tree management", file=sys.stderr)
+
+        async with stdio_server() as (read_stream, write_stream):
+            await server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="prestashop-mcp",
+                    server_version="4.0.0",
+                    capabilities=server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
+                ),
+            )
 
 
 if __name__ == "__main__":
